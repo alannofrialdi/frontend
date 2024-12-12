@@ -81,7 +81,7 @@ function Signup() {
   console.log("Error:", error);
 
   return (
-    <div className="min-h-screen items-center justify-center flex">
+    <div className="min-h-screen items-center justify-center flex m-4">
       <ToastContainer />
       <Form isLogin={false} onFormSubmit={getFormData} />
     </div>

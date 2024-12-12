@@ -15,11 +15,15 @@ interface FormProps {
     username: string;
     email?: string;
     password: string;
-  }) => void; // Tambahkan props ini
+  }) => void;
 }
 
 export const Form: React.FC<FormProps> = ({ isLogin, onFormSubmit }) => {
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<{
+    username: string;
+    email?: string;
+    password: string;
+  }>({
     username: "",
     email: "",
     password: "",
@@ -29,10 +33,15 @@ export const Form: React.FC<FormProps> = ({ isLogin, onFormSubmit }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     setFormState((prevState) => ({
       ...prevState,
       [name]: value,
     }));
+
+    if (isLogin) {
+      delete formState.email;
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
