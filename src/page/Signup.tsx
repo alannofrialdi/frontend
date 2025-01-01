@@ -21,6 +21,8 @@ function Signup() {
     setForm(formData);
   };
 
+  const apiBaseUrl = import.meta.env.VITE_BASE_API_URL || "";
+
   useEffect(() => {
     if (Object.keys(form).length === 0) return;
 
@@ -28,7 +30,7 @@ function Signup() {
       try {
         setLoading(true);
         const response = await axios.post<ApiResponse>(
-          "http://localhost:8080/api/users/signup",
+          `${apiBaseUrl}/api/users/signup`,
           form,
           {
             timeout: 10000,
@@ -55,7 +57,7 @@ function Signup() {
     };
 
     createUser();
-  }, [form]);
+  }, [form, apiBaseUrl]);
 
   useEffect(() => {
     if (data?.message) {

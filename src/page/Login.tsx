@@ -1,51 +1,44 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import Form from "../components/Form";
 import axios from "axios";
 import { $notify } from "../utils/helper";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
-  const [data, setData] = useState<{
-    message: string;
-    code: number;
-    status: string;
-  }>({
-    message: "",
-    status: "",
-    code: 0,
-  });
-
-  const [shouldRunEffect, setShouldRunEffect] = useState(false);
+  const apiBaseUrl = import.meta.env.VITE_BASE_API_URL || "";
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleLogin = useCallback(async (form: object) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:8080/api/users/login",
-        form,
-        {
-          timeout: 10000,
-          headers: {
-            "Content-Type": "application/json",
-          },
+  const handleLogin = useCallback(
+    async (form: object) => {
+      try {
+        const response = await axios.post(
+          apiBaseUrl + "/api/users/login",
+          form
+        );
+
+        console.log(response.data);
+
+        if (response.data.status != "ok") {
+          $notify(response.data);
+        } else {
+          login(response.data);
+          navigate("/dashboard");
         }
-      );
-      setData(response.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        console.log(err.message);
-      } else if (err instanceof Error) {
-        console.log(err.message);
-      } else {
-        console.log("An unknown error occurred");
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          console.log(err.message);
+        } else if (err instanceof Error) {
+          console.log(err.message);
+        } else {
+          console.log("An unknown error occurred");
+        }
       }
-    } finally {
-      setShouldRunEffect(true);
-    }
-  }, []);
+    },
+    [apiBaseUrl, login, navigate]
+  );
 
   const getFormData = useCallback(
     (formData: object) => {
@@ -53,17 +46,6 @@ export default function Login() {
     },
     [handleLogin]
   );
-
-  useEffect(() => {
-    if (!shouldRunEffect) return;
-
-    if (data.status == "ok") {
-      login();
-      navigate("/home");
-    } else {
-      return $notify(data);
-    }
-  }, [data, navigate, shouldRunEffect, login]);
 
   return (
     <div className="min-h-screen items-center justify-center flex m-4">

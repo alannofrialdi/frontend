@@ -7,8 +7,6 @@ interface NotifProps {
 }
 
 export const $notify = ({ message, status }: NotifProps) => {
-  console.log(message);
-
   const notif =
     status === "ok"
       ? toast.success
