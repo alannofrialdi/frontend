@@ -4,15 +4,13 @@ import axios from "axios";
 import { $notify } from "../utils/helper";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const apiBaseUrl = import.meta.env.VITE_BASE_API_URL || "";
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleLogin = useCallback(
-    async (form: object) => {
+    async (form: any) => {
       try {
         const response = await axios.post(
           apiBaseUrl + "/api/users/login",
@@ -21,23 +19,35 @@ export default function Login() {
 
         console.log(response.data);
 
-        if (response.data.status != "ok") {
-          $notify(response.data);
+        if (response.data.status !== "ok") {
+          $notify(response.data.message || "Login failed");
         } else {
-          login(response.data);
+          // Login success, fetch user data
+          const userResponse = await axios.get(apiBaseUrl + "/api/users/find", {
+            params: { param: form.username },
+          });
+
+          const userData = userResponse.data.content;
+          console.log("user id", userData.id);
+
+          // Update localStorage
+          localStorage.setItem("userId", userData?.id);
+          localStorage.setItem("username", userData?.username);
+
+          // Navigate to dashboard
           navigate("/dashboard");
         }
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          console.log(err.message);
+          console.error(err.message);
         } else if (err instanceof Error) {
-          console.log(err.message);
+          console.error(err.message);
         } else {
-          console.log("An unknown error occurred");
+          console.error("An unknown error occurred");
         }
       }
     },
-    [apiBaseUrl, login, navigate]
+    [apiBaseUrl, navigate]
   );
 
   const getFormData = useCallback(

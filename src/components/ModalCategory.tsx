@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CiSaveDown1 } from "react-icons/ci";
 import { useApi } from "../context/ApiContext";
 import { $notify } from "../utils/helper";
-import { useAuth } from "../hooks/useAuth";
+
 import { ToastContainer } from "react-toastify";
 import { useSidebar } from "../context/SidebarContext";
 
@@ -20,8 +20,8 @@ export function ModalCategory(props: ModalCategoryProps) {
   const [category, setCategory] = useState<string>("");
   const [validation, setValidation] = useState<boolean>(false);
   const { apiCall } = useApi();
-  const { user } = useAuth();
-  const username = user?.user;
+
+  const username = localStorage.getItem("username");
 
   const handlePostData = async () => {
     if (!category.trim()) {

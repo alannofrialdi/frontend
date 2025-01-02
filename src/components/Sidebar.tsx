@@ -1,8 +1,13 @@
-import React, { forwardRef, useCallback, useState, useEffect } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useState,
+  useEffect,
+  useImperativeHandle,
+} from "react";
 import { Sidebar } from "flowbite-react";
 import { HiChartPie, HiOutlineDocumentText, HiUser } from "react-icons/hi";
 import { useApi } from "../context/ApiContext";
-import { useAuth } from "../hooks/useAuth";
 
 interface SidebarComponentProps {
   children: React.ReactNode;
@@ -18,8 +23,7 @@ const SidebarComponent = forwardRef<any, SidebarComponentProps>(
     const [isHovered, setIsHovered] = useState(false);
     const { apiCall } = useApi();
     const [categories, setCategories] = useState<Category[]>([]);
-    const { user } = useAuth();
-    const username = user?.user;
+    const username = localStorage.getItem("username");
 
     const fetchData = useCallback(async () => {
       try {
@@ -37,7 +41,7 @@ const SidebarComponent = forwardRef<any, SidebarComponentProps>(
     }, [fetchData]);
 
     // Berikan akses fungsi fetchData ke ref
-    React.useImperativeHandle(ref, () => ({
+    useImperativeHandle(ref, () => ({
       fetchData,
     }));
 
