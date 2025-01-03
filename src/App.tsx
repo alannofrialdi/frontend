@@ -53,7 +53,7 @@ function App() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col justify-between items-center">
+      <div className="max-h-screen flex flex-col justify-between items-center">
         <div className=" animate-pulse flex-grow flex flex-col items-center justify-center">
           <h1 className="text-sm text-center px-4">
             Aplikasi ini <b>tidak tersedia untuk perangkat mobile</b>, karena
