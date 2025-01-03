@@ -5,7 +5,7 @@ import {
   useEffect,
   useImperativeHandle,
 } from "react";
-import { Sidebar } from "flowbite-react";
+import { Checkbox, Sidebar } from "flowbite-react";
 import { HiChartPie, HiOutlineDocumentText, HiUser } from "react-icons/hi";
 import { useApi } from "../context/ApiContext";
 
@@ -17,14 +17,17 @@ interface Category {
   category: string;
 }
 
-// Gunakan React.forwardRef
 const SidebarComponent = forwardRef<any, SidebarComponentProps>(
-  ({ children }: SidebarComponentProps, ref) => {
+  ({ children }, ref) => {
     const [isHovered, setIsHovered] = useState(false);
-    const { apiCall } = useApi();
+    const [isFixed, setIsFixed] = useState(
+      JSON.parse(localStorage.getItem("fixedSidebar") || "false")
+    );
     const [categories, setCategories] = useState<Category[]>([]);
+    const { apiCall } = useApi();
     const username = localStorage.getItem("username");
 
+    // Fetch categories
     const fetchData = useCallback(async () => {
       try {
         const data: Category[] = await apiCall("GET", "/api/categories", [], {
@@ -40,22 +43,46 @@ const SidebarComponent = forwardRef<any, SidebarComponentProps>(
       fetchData();
     }, [fetchData]);
 
-    // Berikan akses fungsi fetchData ke ref
     useImperativeHandle(ref, () => ({
       fetchData,
     }));
 
+    // Handle fixed sidebar toggle
+    const handleFixedSidebar = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const checked = e.target.checked;
+      localStorage.setItem("fixedSidebar", JSON.stringify(checked));
+      setIsFixed(checked);
+    };
+
     return (
-      <div className="flex h-screen">
+      <div className="flex h-screen overflow-hidden">
         <div
           className={`max-sm:hidden transition-all duration-300 ease-in-out ${
-            isHovered ? "w-64" : "w-16"
-          } bg-white border-r`}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+            isHovered || isFixed ? "w-64" : "w-16"
+          } bg-gray-100 border-r overflow-y-auto`}
+          onMouseEnter={() => !isFixed && setIsHovered(true)}
+          onMouseLeave={() => !isFixed && setIsHovered(false)}
         >
-          <Sidebar collapseBehavior="collapse" collapsed={!isHovered}>
+          <Sidebar
+            collapseBehavior="collapse"
+            collapsed={!isHovered && !isFixed}
+          >
             <Sidebar.Items>
+              <Sidebar.ItemGroup>
+                <div className="mb-2 flex items-center ml-3">
+                  <Checkbox
+                    id="fixed"
+                    checked={isFixed}
+                    onChange={handleFixedSidebar}
+                    className="hover:cursor-pointer"
+                  />
+                  {(isHovered || isFixed) && (
+                    <label htmlFor="fixed" className="ml-4">
+                      Fixed Sidebar
+                    </label>
+                  )}
+                </div>
+              </Sidebar.ItemGroup>
               <Sidebar.ItemGroup>
                 <Sidebar.Item href="/dashboard" icon={HiChartPie}>
                   Dashboard

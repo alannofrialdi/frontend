@@ -20,7 +20,8 @@ export default function Login() {
         console.log(response.data);
 
         if (response.data.status !== "ok") {
-          $notify(response.data.message || "Login failed");
+          $notify(response.data);
+          console.log("Login Failed");
         } else {
           // Login success, fetch user data
           const userResponse = await axios.get(apiBaseUrl + "/api/users/find", {
@@ -58,9 +59,11 @@ export default function Login() {
   );
 
   return (
-    <div className="min-h-screen items-center justify-center flex m-4">
+    <>
       <ToastContainer />
-      <Form isLogin onFormSubmit={getFormData} />
-    </div>
+      <div className="min-h-screen items-center justify-center flex m-4">
+        <Form isLogin onFormSubmit={getFormData} />
+      </div>
+    </>
   );
 }

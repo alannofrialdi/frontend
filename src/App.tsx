@@ -10,6 +10,7 @@ import { ToastContainer } from "react-toastify";
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import CategoryPage from "./page/CategoryPage";
+import UserSettings from "./page/UserPage";
 
 interface Category {
   category: string;
@@ -54,12 +55,13 @@ function App() {
             pauseOnFocusLoss
             draggable
             pauseOnHover
-            theme="dark"
+            theme="light"
           />
           <Routes>
             {/* Layout utama */}
             <Route path="/" element={<MainLayout />}>
               <Route path="/dashboard" element={<Home />} />
+              <Route path="/profile" element={<UserSettings />} />
               {/* Halaman dinamis berdasarkan kategori */}
               {categories.length > 0 ? (
                 categories.map((item, index) => (
@@ -82,7 +84,6 @@ function App() {
             {/* Halaman login dan signup */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/" element={<Signup />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

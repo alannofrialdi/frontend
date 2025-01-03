@@ -7,12 +7,13 @@ import {
   Alert,
   Textarea,
   Card,
+  HR,
 } from "flowbite-react";
 import axios from "axios";
 import { Task } from "../interface/Task";
 import { ColDef } from "ag-grid-community";
 import AgTable from "../components/AgTable";
-import { CiEdit, CiTrash } from "react-icons/ci";
+import { CiEdit, CiTrash, CiCirclePlus } from "react-icons/ci";
 
 const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
   categoryId,
@@ -174,20 +175,17 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
           {alert && <Alert color="failure">{alert}</Alert>}
 
           <Button onClick={handleModalToggle} className="mb-4">
-            Add Task
+            <CiCirclePlus size={20} className="mr-2" />
+            <span>Add Task</span>
           </Button>
 
-          <div
-            className="ag-theme-alpine"
-            style={{ height: 400, width: "100%" }}
-          >
-            <AgTable
-              rowData={tasks}
-              columnDefs={columns}
-              isPagination={true}
-              paginationPageSize={10}
-            />
-          </div>
+          <HR />
+          <AgTable
+            rowData={tasks}
+            columnDefs={columns}
+            isPagination={true}
+            paginationPageSize={10}
+          />
 
           {/* Modal for Add/Edit Task */}
           <Modal show={isModalOpen} onClose={handleModalToggle}>

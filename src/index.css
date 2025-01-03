@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.text-center {
-  text-align: center;
-}
-
 body {
   font-family: "Poppins", serif;
   font-optical-sizing: auto;
