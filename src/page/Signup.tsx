@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 // Sesuaikan dengan format respons dari API
 interface ApiResponse {
@@ -16,9 +17,11 @@ function Signup() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const getFormData = (formData: object) => {
     setForm(formData);
+    navigate("/login");
   };
 
   const apiBaseUrl = import.meta.env.VITE_BASE_API_URL || "";

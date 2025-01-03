@@ -22,6 +22,16 @@ function App() {
   const apiBaseUrl = import.meta.env.VITE_BASE_API_URL || "";
   const [categories, setCategories] = useState<Category[]>([]);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      )
+    );
+  }, []);
+
   // Fungsi untuk mendapatkan kategori dari API
   const getCategories = useCallback(async () => {
     try {
@@ -40,6 +50,26 @@ function App() {
   useEffect(() => {
     getCategories();
   }, [getCategories]);
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen flex flex-col justify-between items-center">
+        <div className=" animate-pulse flex-grow flex flex-col items-center justify-center">
+          <h1 className="text-sm text-center px-4">
+            Aplikasi ini <b>tidak tersedia untuk perangkat mobile</b>, karena
+            ini bukan main project si developer.
+          </h1>
+          <p className="text-center underline text-blue-500">
+            Silakan buka di perangkat desktop.
+          </p>
+        </div>
+
+        <div className="pb-4">
+          <p className="text-center">Made by love ❤️</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ApiProvider>

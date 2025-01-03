@@ -46,6 +46,8 @@ const AgTable = ({
   columnDefs,
   updateData,
   paginationPageSize,
+  autoSizeStrategy,
+  rowClassRules,
 }: {
   getRef?: (ref: any) => void;
   rowData?: Array<any>;
@@ -53,6 +55,8 @@ const AgTable = ({
   columnDefs: Array<any>;
   updateData?: (params: any) => Promise<void>;
   paginationPageSize?: number;
+  autoSizeStrategy?: any;
+  rowClassRules?: any;
 }) => {
   const gridRef = useRef<any>(null);
   const containerStyle = useMemo(() => ({ width: "100%", height: 740 }), []);
@@ -66,14 +70,16 @@ const AgTable = ({
 
   return (
     <div style={containerStyle} className="max-sm:hidden">
-      <div id="grid-wrapper" style={{ width: "100%", height: "100%" }}>
+      <div id="grid-wrapper" style={{ width: "100%", height: "95%" }}>
         <div style={gridStyle}>
           <AgGridReact<any>
             ref={gridRef}
+            autoSizeStrategy={autoSizeStrategy}
             theme={myTheme}
             rowData={rowData}
             columnDefs={columnDefs}
             onCellValueChanged={updateData}
+            rowClassRules={rowClassRules}
             pagination={isPagination}
             paginationPageSize={paginationPageSize}
           />

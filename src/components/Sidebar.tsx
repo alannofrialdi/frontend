@@ -5,7 +5,7 @@ import {
   useEffect,
   useImperativeHandle,
 } from "react";
-import { Checkbox, Sidebar } from "flowbite-react";
+import { Checkbox, Sidebar, Tooltip } from "flowbite-react";
 import { HiChartPie, HiOutlineDocumentText, HiUser } from "react-icons/hi";
 import { useApi } from "../context/ApiContext";
 
@@ -78,17 +78,30 @@ const SidebarComponent = forwardRef<any, SidebarComponentProps>(
                   />
                   {(isHovered || isFixed) && (
                     <label htmlFor="fixed" className="ml-4">
-                      Fixed Sidebar
+                      <Tooltip
+                        content="Jika ingin sidebar pada posisi tetap"
+                        placement="right"
+                      >
+                        Fixed Sidebar
+                      </Tooltip>
                     </label>
                   )}
                 </div>
               </Sidebar.ItemGroup>
               <Sidebar.ItemGroup>
                 <Sidebar.Item href="/dashboard" icon={HiChartPie}>
-                  Dashboard
+                  <Tooltip content="Halaman utama" placement="right">
+                    Dashboard
+                  </Tooltip>
                 </Sidebar.Item>
+
                 <Sidebar.Item href="/profile" icon={HiUser}>
-                  Profile
+                  <Tooltip
+                    content="Halaman untuk mengatur data pengguna"
+                    placement="right"
+                  >
+                    Profile
+                  </Tooltip>
                 </Sidebar.Item>
               </Sidebar.ItemGroup>
               <Sidebar.ItemGroup>
@@ -101,6 +114,13 @@ const SidebarComponent = forwardRef<any, SidebarComponentProps>(
                     {item.category}
                   </Sidebar.Item>
                 ))}
+              </Sidebar.ItemGroup>
+              <Sidebar.ItemGroup>
+                {isHovered || isFixed ? (
+                  <h1 className="ml-3">Made by love ❤️</h1>
+                ) : (
+                  <span className="ml-3">❤️</span>
+                )}
               </Sidebar.ItemGroup>
             </Sidebar.Items>
           </Sidebar>

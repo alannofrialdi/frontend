@@ -1,4 +1,4 @@
-import { Card, Button, HR } from "flowbite-react";
+import { Card, Button, HR, Tooltip } from "flowbite-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CgFolderAdd } from "react-icons/cg";
 import AgTable from "../components/AgTable";
@@ -144,17 +144,19 @@ function Home() {
       <Card className="max-h-screen">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold max-sm:text-base">DASHBOARD</h1>
-          <Button
-            color="blue"
-            size={isMobileView ? "xs" : "sm"}
-            className="flex items-center justify-center"
-            onClick={() => {
-              setOpenModal(true);
-            }}
-          >
-            <CgFolderAdd size={isMobileView ? 15 : 20} className="mr-2" />
-            <span>Category</span>
-          </Button>
+          <Tooltip content="Click untuk membuat kategori baru" placement="left">
+            <Button
+              color="blue"
+              size={isMobileView ? "xs" : "sm"}
+              className="flex items-center justify-center"
+              onClick={() => {
+                setOpenModal(true);
+              }}
+            >
+              <CgFolderAdd size={isMobileView ? 15 : 20} className="mr-2" />
+              <span>Category</span>
+            </Button>
+          </Tooltip>
         </div>
         <HR />
         <AgTable

@@ -4,16 +4,20 @@ import {
   Modal,
   TextInput,
   Radio,
-  Alert,
   Textarea,
   Card,
   HR,
+  Datepicker,
 } from "flowbite-react";
 import axios from "axios";
 import { Task } from "../interface/Task";
 import { ColDef } from "ag-grid-community";
 import AgTable from "../components/AgTable";
 import { CiEdit, CiTrash, CiCirclePlus } from "react-icons/ci";
+import moment from "moment";
+import { ToastContainer } from "react-toastify";
+import { $notify } from "../utils/helper";
+import { useApi } from "../context/ApiContext";
 
 const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
   categoryId,
@@ -22,8 +26,10 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Partial<Task> | null>(null);
-  const [alert, setAlert] = useState<string>("");
-
+  const [alerts, setAlerts] = useState<{ [key: string]: string }>({});
+  const [startDate, setStartDate] = useState<Date | null>(new Date());
+  const [endDate, setEndDate] = useState<Date | null>(new Date());
+  const { apiCall } = useApi();
   const userIdString = localStorage.getItem("userId");
 
   if (!userIdString) {
@@ -34,17 +40,57 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
 
   const apiBaseUrl = import.meta.env.VITE_BASE_API_URL || "";
 
-  // Fetch tasks by category
   const fetchTasks = useCallback(async () => {
     try {
       const response = await axios.get(`${apiBaseUrl}/api/tasks`, {
         params: { categoryId, userId },
       });
-      setTasks(response.data);
+
+      const formattedTasks = response.data.map((task: any) => ({
+        ...task,
+        deadline: moment(task.deadline).format("DD MMM YYYY, HH:mm"),
+        countdown: moment(task.deadline).diff(task.updatedAt, "days"),
+      }));
+
+      setTasks(formattedTasks);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
     }
   }, [categoryId, apiBaseUrl, userId]);
+
+  const handleDateChange = async (
+    value: Date | null,
+    type: "start" | "end"
+  ) => {
+    console.log(value);
+    console.log(typeof value);
+    if (type === "start") {
+      setStartDate(value);
+    } else {
+      setEndDate(value);
+    }
+
+    console.log(apiBaseUrl);
+    try {
+      const response = await apiCall("GET", `/api/tasks/filterbydate`, null, {
+        params: {
+          startDate,
+          endDate,
+          userId,
+        },
+      });
+
+      const formattedTasks = response.map((task: any) => ({
+        ...task,
+        deadline: moment(task.deadline).format("DD MMM YYYY, HH:mm"),
+        countdown: moment(task.deadline).diff(task.updatedAt, "days"),
+      }));
+
+      setTasks(formattedTasks);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     fetchTasks();
@@ -53,12 +99,14 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
   const handleModalToggle = () => {
     setIsModalOpen(!isModalOpen);
     setCurrentTask(null);
+    setAlerts({});
   };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    setAlerts((prev) => ({ ...prev, [name]: "" }));
     setCurrentTask((prev) => ({
       ...prev,
       [name]: value,
@@ -67,6 +115,7 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    setAlerts((prev) => ({ ...prev, [name]: "" }));
     setCurrentTask((prev) => ({
       ...prev,
       [name]: value,
@@ -80,18 +129,42 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
   };
 
   const handleSubmit = async () => {
-    if (!currentTask || !currentTask.title || !currentTask.priority) {
-      setAlert("Title and Priority are required.");
-      return;
+    if (!currentTask)
+      return $notify({
+        message: "Please fill all fields",
+        status: "error",
+      });
+
+    const newAlerts: { [key: string]: string } = {};
+
+    if (!currentTask.title) {
+      newAlerts.title = "Task title cannot be empty";
+    } else if (validateTitle(currentTask.title) && !currentTask.id) {
+      newAlerts.title = `A task with the title '${currentTask.title}' already exists.`;
     }
 
-    if (validateTitle(currentTask.title) && !currentTask.id) {
-      setAlert("A task with this title already exists.");
+    if (!currentTask.deadline) {
+      newAlerts.deadline = "Please fill in the deadline";
+    }
+
+    if (!currentTask.priority) {
+      newAlerts.priority = "Please select a priority";
+    }
+
+    if (!currentTask.status) {
+      newAlerts.status = "Please select a status";
+    }
+
+    if (Object.keys(newAlerts).length > 0) {
+      setAlerts(newAlerts);
       return;
     }
 
     try {
       if (currentTask.id) {
+        currentTask.deadline = moment(currentTask.deadline).format(
+          "YYYY-MM-DDTHH:mm:ss.SSS"
+        );
         await axios.put(
           `${apiBaseUrl}/api/tasks/${currentTask.id}`,
           currentTask
@@ -105,7 +178,6 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
       }
       fetchTasks();
       handleModalToggle();
-      setAlert("");
     } catch (error) {
       console.error("Failed to save task:", error);
     }
@@ -125,10 +197,38 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
     }
   };
 
+  const autoSizeStrategy = {
+    type: "fitGridWidth",
+    defaultMinWidth: 150,
+    columnLimits: [
+      {
+        colId: "description",
+        minWidth: 600,
+      },
+      {
+        colId: "actions",
+        minWidth: 200,
+      },
+    ],
+  };
+
+  const rowClassRules = {
+    "rag-green": (params: any) => params.data.status === "COMPLETED",
+    "rag-red": (params: any) => parseInt(params.data.countdown) < 0,
+  };
+
   const columns: ColDef<any>[] = [
     { headerName: "Title", field: "title", sortable: true, filter: true },
     { headerName: "Priority", field: "priority", sortable: true, filter: true },
-    { headerName: "Status", field: "status", sortable: true, filter: true },
+    {
+      headerName: "Status",
+      field: "status",
+      sortable: true,
+      filter: true,
+      cellClassRules: {
+        "green-text": (params) => params.value === "COMPLETED",
+      },
+    },
     {
       headerName: "Description",
       field: "description",
@@ -136,9 +236,39 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
       filter: true,
     },
     {
+      headerName: "Created",
+      field: "createdAt",
+      sortable: true,
+      valueFormatter: (params) => {
+        return moment(params.value).format("DD MMM YYYY, HH:mm");
+      },
+    },
+    {
+      headerName: "Last Updated",
+      field: "updatedAt",
+      sortable: true,
+
+      valueFormatter: (params) => {
+        return moment(params.value).format("DD MMM YYYY, HH:mm");
+      },
+    },
+    {
+      headerName: "Deadline",
+      field: "deadline",
+      sortable: true,
+
+      valueFormatter: (params) => {
+        return moment(params.value).format("DD MMM YYYY, HH:mm");
+      },
+    },
+    {
+      headerName: "Countdown (day)",
+      field: "countdown",
+      sortable: true,
+    },
+    {
       headerName: "Actions",
       field: "actions",
-      headerClass: "text-center", // Tambahkan kelas untuk mengatur teks di tengah
       cellRenderer: (params: any) => (
         <div className="flex gap-2">
           <Button
@@ -151,16 +281,20 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
             <CiEdit size={15} className="mr-2" />
             <span>Edit</span>
           </Button>
-          <Button
-            size="xs"
-            type="button"
-            color="red"
-            className="flex items-center my-1 justify-center"
-            onClick={() => handleDeleteTask(params.data.id)}
-          >
-            <CiTrash size={15} className="mr-2" />
-            <span>Delete</span>
-          </Button>
+          {params.data.status !== "COMPLETED" ? (
+            <Button
+              size="xs"
+              type="button"
+              color="red"
+              className="flex items-center my-1 justify-center"
+              onClick={() => handleDeleteTask(params.data.id)}
+            >
+              <CiTrash size={15} className="mr-2" />
+              <span>Delete</span>
+            </Button>
+          ) : (
+            ""
+          )}
         </div>
       ),
     },
@@ -168,45 +302,75 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
 
   return (
     <div className="p-2">
+      <ToastContainer />
       <Card className="min-h-screen">
         <div className="p-6">
           <h1 className="text-2xl font-bold mb-4">{categoryName}</h1>
 
-          {alert && <Alert color="failure">{alert}</Alert>}
-
-          <Button onClick={handleModalToggle} className="mb-4">
-            <CiCirclePlus size={20} className="mr-2" />
-            <span>Add Task</span>
-          </Button>
+          <HR />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center space-x-4">
+              <div>
+                <h1>Start Date</h1>
+                <Datepicker
+                  value={startDate}
+                  onChange={(value) => handleDateChange(value, "start")}
+                />
+              </div>
+              <div>
+                <h1>End Date</h1>
+                <Datepicker
+                  value={endDate}
+                  onChange={(value) => handleDateChange(value, "end")}
+                />
+              </div>
+            </div>
+            <Button onClick={handleModalToggle} className="mt-5">
+              <CiCirclePlus size={20} className="mr-2" />
+              <span>Add Task</span>
+            </Button>
+          </div>
 
           <HR />
+
           <AgTable
             rowData={tasks}
             columnDefs={columns}
             isPagination={true}
             paginationPageSize={10}
+            rowClassRules={rowClassRules}
+            autoSizeStrategy={autoSizeStrategy}
           />
 
-          {/* Modal for Add/Edit Task */}
           <Modal show={isModalOpen} onClose={handleModalToggle}>
             <Modal.Header>
               {currentTask?.id ? "Edit Task" : "Add Task"}
             </Modal.Header>
             <Modal.Body>
-              <TextInput
-                name="title"
-                value={currentTask?.title || ""}
-                onChange={handleInputChange}
-                placeholder="Task Title"
-                className="mb-4"
-              />
-              <Textarea
-                name="description"
-                value={currentTask?.description || ""}
-                onChange={handleInputChange}
-                placeholder="Task Description"
-                className="mb-4"
-              />
+              <div className="mb-4">
+                <TextInput
+                  name="title"
+                  value={currentTask?.title || ""}
+                  onChange={handleInputChange}
+                  placeholder="Task Title"
+                  color={alerts.title ? "failure" : undefined}
+                  helperText={
+                    alerts.title && (
+                      <span className="text-red-600 text-sm">
+                        {alerts.title}
+                      </span>
+                    )
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <Textarea
+                  name="description"
+                  value={currentTask?.description || ""}
+                  onChange={handleInputChange}
+                  placeholder="Task Description"
+                />
+              </div>
               <div className="mb-4">
                 <p className="font-medium mb-2">Priority:</p>
                 {["LOW", "MEDIUM", "HIGH"].map((priority) => (
@@ -222,6 +386,11 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
                     <label htmlFor={priority}>{priority}</label>
                   </div>
                 ))}
+                {alerts.priority && (
+                  <span className="text-red-600 text-sm">
+                    {alerts.priority}
+                  </span>
+                )}
               </div>
               <div className="mb-4">
                 <p className="font-medium mb-2">Status:</p>
@@ -238,14 +407,30 @@ const TaskPage: React.FC<{ categoryId: number; categoryName: string }> = ({
                     <label htmlFor={status}>{status}</label>
                   </div>
                 ))}
+                {alerts.status && (
+                  <span className="text-red-600 text-sm">{alerts.status}</span>
+                )}
               </div>
-              <TextInput
-                name="deadline"
-                type="datetime-local"
-                value={currentTask?.deadline || ""}
-                onChange={handleInputChange}
-                className="mb-4"
-              />
+              <div className="mb-4">
+                <TextInput
+                  name="deadline"
+                  type="datetime-local"
+                  value={
+                    currentTask?.deadline
+                      ? moment(currentTask.deadline).format("YYYY-MM-DDTHH:mm")
+                      : ""
+                  }
+                  onChange={handleInputChange}
+                  color={alerts.deadline ? "failure" : undefined}
+                  helperText={
+                    alerts.deadline && (
+                      <span className="text-red-600 text-sm">
+                        {alerts.deadline}
+                      </span>
+                    )
+                  }
+                />
+              </div>
             </Modal.Body>
             <Modal.Footer>
               <Button onClick={handleSubmit}>
